@@ -1,0 +1,140 @@
+USE RRHH_DW;
+
+SELECT 
+    d.NombreDepartamento, 
+    SUM(f.DiasAusencia) AS TotalDiasPerdidos, 
+    SUM(f.CantidadAusencias) AS TotalAusencias
+FROM FactAusencias f
+JOIN DimDepartamento d ON f.DepartamentoKey = d.DepartamentoKey
+GROUP BY d.NombreDepartamento
+ORDER BY TotalDiasPerdidos DESC;
+
+SELECT 
+    e.NombreCompleto, 
+    d.NombreDepartamento, 
+    SUM(f.DiasAusencia) AS TotalDiasAusencia
+FROM FactAusencias f
+JOIN DimEmpleado e ON f.EmpleadoKey = e.EmpleadoKey
+JOIN DimDepartamento d ON f.DepartamentoKey = d.DepartamentoKey
+GROUP BY e.NombreCompleto, d.NombreDepartamento
+ORDER BY TotalDiasAusencia DESC
+LIMIT 5;
+
+SELECT 
+    t.Anio, 
+    t.NombreMes, 
+    SUM(f.DiasAusencia) AS DiasAusenciaMes
+FROM FactAusencias f
+JOIN DimFecha t ON f.FechaKey = t.FechaKey
+GROUP BY t.Anio, t.Mes, t.NombreMes
+ORDER BY t.Anio, t.Mes;
+
+SELECT 
+    o.Ciudad, 
+    f.JustificadaFlag AS EsJustificada,
+    SUM(f.DiasAusencia) AS TotalDiasAusencia
+FROM FactAusencias f
+JOIN DimOficina o ON f.OficinaKey = o.OficinaKey
+GROUP BY o.Ciudad, f.JustificadaFlag
+ORDER BY o.Ciudad;
+
+SELECT 
+    e.Genero, 
+    e.EstadoCivil, 
+    ROUND(AVG(f.DiasAusencia), 2) AS PromedioDiasAusencia
+FROM FactAusencias f
+JOIN DimEmpleado e ON f.EmpleadoKey = e.EmpleadoKey
+GROUP BY e.Genero, e.EstadoCivil
+ORDER BY PromedioDiasAusencia DESC;
+
+SELECT 
+    d.NombreDepartamento, 
+    ROUND(AVG(f.Calificacion), 2) AS PromedioCalificacion
+FROM FactEvaluaciones f
+JOIN DimDepartamento d ON f.DepartamentoKey = d.DepartamentoKey
+GROUP BY d.NombreDepartamento
+ORDER BY PromedioCalificacion DESC;
+
+SELECT 
+    p.NombrePuesto, 
+    ROUND(AVG(f.Calificacion), 2) AS CalificacionPromedio
+FROM FactEvaluaciones f
+JOIN DimPuesto p ON f.PuestoKey = p.PuestoKey
+GROUP BY p.NombrePuesto
+ORDER BY CalificacionPromedio ASC
+LIMIT 3;
+
+SELECT 
+    t.Anio, 
+    ROUND(AVG(f.Calificacion), 2) AS PromedioAnual, 
+    SUM(f.CantidadEvaluaciones) AS TotalEvaluacionesRealizadas
+FROM FactEvaluaciones f
+JOIN DimFecha t ON f.FechaKey = t.FechaKey
+GROUP BY t.Anio
+ORDER BY t.Anio;
+
+SELECT 
+    e.NombreCompleto AS JefeEvaluador, 
+    ROUND(AVG(f.Calificacion), 2) AS PromedioNotaDada, 
+    COUNT(f.FactEvaluacionKey) AS CantidadEvaluaciones
+FROM FactEvaluaciones f
+JOIN DimEmpleado e ON f.EvaluadorEmpleadoKey = e.EmpleadoKey
+GROUP BY e.NombreCompleto
+ORDER BY CantidadEvaluaciones DESC;
+
+SELECT 
+    e.NombreCompleto, 
+    p.NombrePuesto, 
+    ROUND(AVG(f.Calificacion), 2) AS NotaEmpleado
+FROM FactEvaluaciones f
+JOIN DimEmpleado e ON f.EmpleadoKey = e.EmpleadoKey
+JOIN DimPuesto p ON f.PuestoKey = p.PuestoKey
+GROUP BY e.NombreCompleto, p.NombrePuesto
+HAVING AVG(f.Calificacion) > (SELECT AVG(Calificacion) FROM FactEvaluaciones)
+ORDER BY NotaEmpleado DESC;
+
+SELECT 
+    o.Pais, 
+    o.Ciudad, 
+    SUM(f.CostoCapacitacion) AS TotalInvertido
+FROM FactCapacitaciones f
+JOIN DimOficina o ON f.OficinaKey = o.OficinaKey
+GROUP BY o.Pais, o.Ciudad
+ORDER BY TotalInvertido DESC;
+
+SELECT 
+    c.Proveedor, 
+    ROUND(AVG(f.CalificacionObtenida), 2) AS NotaPromedio, 
+    COUNT(f.FactCapacitacionKey) AS CursosEvaluados
+FROM FactCapacitaciones f
+JOIN DimCapacitacion c ON f.CapacitacionKey = c.CapacitacionKey
+WHERE f.Estado = 'Completada'
+GROUP BY c.Proveedor
+ORDER BY NotaPromedio DESC;
+
+SELECT 
+    d.NombreDepartamento, 
+    f.Estado,
+    COUNT(f.FactCapacitacionKey) AS TotalCursos
+FROM FactCapacitaciones f
+JOIN DimDepartamento d ON f.DepartamentoKey = d.DepartamentoKey
+GROUP BY d.NombreDepartamento, f.Estado
+ORDER BY d.NombreDepartamento, f.Estado;
+
+SELECT 
+    p.NivelSalarial, 
+    ROUND(AVG(f.CostoCapacitacion), 2) AS CostoPromedioPorCurso
+FROM FactCapacitaciones f
+JOIN DimPuesto p ON f.PuestoKey = p.PuestoKey
+GROUP BY p.NivelSalarial
+ORDER BY CostoPromedioPorCurso DESC;
+
+SELECT 
+    c.NombreCapacitacion, 
+    c.Proveedor, 
+    SUM(f.CostoCapacitacion) AS GastoTotal
+FROM FactCapacitaciones f
+JOIN DimCapacitacion c ON f.CapacitacionKey = c.CapacitacionKey
+GROUP BY c.NombreCapacitacion, c.Proveedor
+ORDER BY GastoTotal DESC
+LIMIT 5;
